@@ -1,0 +1,24 @@
+# Dossiers de build générés par les exportateurs JUCE
+/Builds/*/build/
+/Builds/*/Intermediate/
+/Builds/*/IntermediateSamples/
+
+# Extensions spécifiques aux fichiers de compilation Linux/WSL
+*.o
+*.d
+*.so
+*.a
+
+# Fichiers de projet spécifiques à Windows
+*.sln
+*.vcxproj
+*.user
+*.filters
+*.sdf
+*.suo
+/ipch/
+/.vs/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
