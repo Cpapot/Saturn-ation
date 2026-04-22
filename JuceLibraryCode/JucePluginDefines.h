@@ -59,7 +59,7 @@
  #define JucePlugin_ManufacturerCode       0x4d616e75
 #endif
 #ifndef  JucePlugin_PluginCode
- #define JucePlugin_PluginCode             0x46303275
+ #define JucePlugin_PluginCode             0x4571306b
 #endif
 #ifndef  JucePlugin_IsSynth
  #define JucePlugin_IsSynth                0
