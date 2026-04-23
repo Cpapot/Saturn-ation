@@ -63,6 +63,7 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
 
+	bool							pluginIsEnabled = false;					// Master enable/disable for the plugin
 
     //=========================== Saturation Parameters ============================
     SaturationMode					saturationMode = SaturationMode::HardClip;	// Saturation mode
@@ -80,4 +81,8 @@ private:
 	std::array<juce::IIRFilter, 2>	lowCutFilters;   							// high-pass
 	std::array<juce::IIRFilter, 2>	highCutFilters;  							// low-pass
 	float							applyCutoff(float sample, int channel);
+
+	//=========================== Mix Control Parameters ============================
+	float							applyMix(float drySample, float wetSample);
+	float							mixAmount = 0.5f;							// Mix between dry and wet signal (0.0 to 1.0)	
 };

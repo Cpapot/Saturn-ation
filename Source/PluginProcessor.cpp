@@ -225,6 +225,14 @@ float	SaturnationAudioProcessor::applyCutoff(float sample, int channel)
 	return y;
 }
 
+float	SaturnationAudioProcessor::applyMix(float drySample, float wetSample)
+{
+	// Ensure mixAmount is within the expected range
+	mixAmount = juce::jlimit (0.0f, 1.0f, mixAmount);
+
+	// Linear crossfade between dry and wet signals based on mixAmount
+	return (drySample * (1.0f - mixAmount)) + (wetSample * mixAmount);
+}
 
 void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
@@ -237,13 +245,21 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
+
 		auto* channelData = buffer.getWritePointer (channel);
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
+			if (!pluginIsEnabled)
+			{
+				continue;
+			}
+
 			const float cutoffSample = applyCutoff(channelData[sample], channel);
             const float tonedSample = applyToneControl(cutoffSample, channel);
-            channelData[sample] = applySaturation(tonedSample);
+            const float wetSample = applySaturation(tonedSample);
+
+			channelData[sample] = applyMix(channelData[sample], wetSample);
 		}
 	}
 }
