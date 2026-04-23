@@ -10,6 +10,12 @@
 
 #include <JuceHeader.h>
 
+enum class SaturationMode {
+    HardClip = 0,
+    Tube = 1,
+    Tape = 2
+};
+
 //==============================================================================
 /**
 */
@@ -56,4 +62,11 @@ public:
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
+
+
+    //==============================================================================
+    SaturationMode	saturationMode = SaturationMode::HardClip;	// Saturation mode
+	float			driveAmount = 5.0f;							// Augment signal before clipping (0.1 to 10.0)
+
+    float   applySaturation(float sample);
 };

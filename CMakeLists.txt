@@ -14,7 +14,7 @@ juce_add_plugin(Saturnation
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
     PRODUCT_NAME "Saturn-ation"
-    FORMATS VST3 Standalone
+    FORMATS VST3
 )
 
 target_compile_definitions(Saturnation PUBLIC
