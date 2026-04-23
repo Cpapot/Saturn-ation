@@ -102,6 +102,14 @@ void SaturnationAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
         filter.setCoefficients (lowpassCoefficients);
         filter.reset();
     }
+	
+	auto hp = juce::IIRCoefficients::makeHighPass(sampleRate, lowCutoffFrequency);
+	auto lp = juce::IIRCoefficients::makeLowPass (sampleRate, highCutoffFrequency);
+	for (int ch = 0; ch < 2; ++ch)
+	{
+		lowCutFilters[(size_t)ch].setCoefficients(hp);
+		highCutFilters[(size_t)ch].setCoefficients(lp);
+	}	
 
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
@@ -144,7 +152,11 @@ bool SaturnationAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 
 float SaturnationAudioProcessor::applySaturation(float sample)
 {
-	sample *= driveAmount; // apply drive amount to the input signal
+	// Ensure driveAmount is within the expected range
+	driveAmount = juce::jlimit (0.1f, 10.0f, driveAmount);
+
+	// apply drive amount to the input signal
+	sample *= driveAmount;
 
 	switch (saturationMode)
 	{
@@ -169,6 +181,9 @@ float SaturnationAudioProcessor::applySaturation(float sample)
 
 float SaturnationAudioProcessor::applyToneControl(float sample, int channel)
 {
+	// Ensure toneAmount is within the expected range
+	toneAmount = juce::jlimit (-1.0f, 1.0f, toneAmount);
+
 	// Convert toneAmount (-1.0 to 1.0) to a tilt in dB (-maxTiltDb to +maxTiltDb)
     const float maxTiltDb = 6.0f;
     const float tiltDb = toneAmount * maxTiltDb;
@@ -189,6 +204,28 @@ float SaturnationAudioProcessor::applyToneControl(float sample, int channel)
     return (low * gLow) + (high * gHigh);
 }
 
+float	SaturnationAudioProcessor::applyCutoff(float sample, int channel)
+{
+	// Ensure cutoff frequencies are within the expected range
+	lowCutoffFrequency = juce::jlimit (0.0f, 1000.0f, lowCutoffFrequency);
+	highCutoffFrequency = juce::jlimit (1000.0f, 20000.0f, highCutoffFrequency);
+
+	// Ensure that the high cutoff frequency is always at least equal or above the low cutoff frequency to avoid filter instability
+	highCutoffFrequency = juce::jmax(highCutoffFrequency, lowCutoffFrequency);
+
+	// Ensure that the channel index is within the bounds of the filter arrays
+	const int safeChannel = juce::jlimit (0, static_cast<int> (lowCutFilters.size()) - 1, channel);
+
+	// apply lowcut
+	float y = lowCutFilters[(size_t)safeChannel].processSingleSampleRaw(sample);
+
+	// apply highcut
+	y = highCutFilters[(size_t)safeChannel].processSingleSampleRaw(y);
+
+	return y;
+}
+
+
 void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 	juce::ScopedNoDenormals noDenormals;
@@ -204,8 +241,9 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
-            const float tonedSample = applyToneControl (channelData[sample], channel);
-            channelData[sample] = applySaturation (tonedSample);
+			const float cutoffSample = applyCutoff(channelData[sample], channel);
+            const float tonedSample = applyToneControl(cutoffSample, channel);
+            channelData[sample] = applySaturation(tonedSample);
 		}
 	}
 }

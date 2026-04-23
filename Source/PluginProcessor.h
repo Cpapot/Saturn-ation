@@ -64,12 +64,20 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
 
 
-    //==============================================================================
+    //=========================== Saturation Parameters ============================
     SaturationMode					saturationMode = SaturationMode::HardClip;	// Saturation mode
 	float							driveAmount = 5.0f;							// Augment signal before clipping (0.1 to 10.0)
+	float							applySaturation(float sample);
+
+	//=========================== Tone Control Parameters ============================
 	float							toneAmount = 0.0f;							// Tone control dark to bright (-1.0 to 1.0)
   	std::array<juce::IIRFilter, 2>	toneLowpass;								// Per-channel low-pass for tilt tone control
-
-    float   applySaturation(float sample);
-	float   applyToneControl(float sample, int channel);
+	float							applyToneControl(float sample, int channel);
+	
+	//=========================== Cutoff Control Parameters ============================
+	float							lowCutoffFrequency = 0.0f;					// Cutoff frequency for the low-pass filter (0Hz to 1kHz)
+	float							highCutoffFrequency = 20000.0f;				// Cutoff frequency for the high-pass filter(20kHz to 1kHz)
+	std::array<juce::IIRFilter, 2>	lowCutFilters;   							// high-pass
+	std::array<juce::IIRFilter, 2>	highCutFilters;  							// low-pass
+	float							applyCutoff(float sample, int channel);
 };
