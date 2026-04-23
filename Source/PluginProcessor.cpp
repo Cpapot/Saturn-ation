@@ -93,12 +93,25 @@ void SaturnationAudioProcessor::changeProgramName (int index, const juce::String
 //==============================================================================
 void SaturnationAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    juce::ignoreUnused (samplesPerBlock);
+
+    // Pivot frequency for tilt-style tone control (dark <-> bright)
+    const auto lowpassCoefficients = juce::IIRCoefficients::makeLowPass (sampleRate, 1200.0);
+    for (auto& filter : toneLowpass)
+    {
+        filter.setCoefficients (lowpassCoefficients);
+        filter.reset();
+    }
+
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 }
 
 void SaturnationAudioProcessor::releaseResources()
 {
+    for (auto& filter : toneLowpass)
+        filter.reset();
+
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
@@ -154,6 +167,28 @@ float SaturnationAudioProcessor::applySaturation(float sample)
 	}
 }
 
+float SaturnationAudioProcessor::applyToneControl(float sample, int channel)
+{
+	// Convert toneAmount (-1.0 to 1.0) to a tilt in dB (-maxTiltDb to +maxTiltDb)
+    const float maxTiltDb = 6.0f;
+    const float tiltDb = toneAmount * maxTiltDb;
+
+	// Calculate the gain for the high and low frequencies based on the tilt amount
+	// if toneAmount is positive, gHigh > 1 and gLow < 1, boosting highs and cutting lows
+	// if toneAmount is negative, gHigh < 1 and gLow > 1, cutting highs and boosting lows
+    const float gHigh = std::pow (10.0f,  tiltDb / 20.0f);
+    const float gLow  = std::pow (10.0f, -tiltDb / 20.0f);
+
+    const int safeChannel = juce::jlimit (0, static_cast<int> (toneLowpass.size()) - 1, channel);
+
+	// Apply the low-pass filter to get the low-frequency content, and subtract this from the original signal to get the high-frequency content
+    const float low = toneLowpass[static_cast<size_t> (safeChannel)].processSingleSampleRaw (sample);
+    const float high = sample - low;
+
+	// Combine the low and high parts with their respective gains to create the final output
+    return (low * gLow) + (high * gHigh);
+}
+
 void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 	juce::ScopedNoDenormals noDenormals;
@@ -163,16 +198,14 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear (i, 0, buffer.getNumSamples());
 
-
-
-
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
 		auto* channelData = buffer.getWritePointer (channel);
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
-			channelData[sample] = applySaturation(channelData[sample]);
+            const float tonedSample = applyToneControl (channelData[sample], channel);
+            channelData[sample] = applySaturation (tonedSample);
 		}
 	}
 }
