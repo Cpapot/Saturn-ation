@@ -10,20 +10,25 @@
 #include "PluginEditor.h"
 
 //==============================================================================
+#if JucePlugin_PreferredChannelConfigurations
 SaturnationAudioProcessor::SaturnationAudioProcessor()
-#ifndef JucePlugin_PreferredChannelConfigurations
+    : apvts (*this, nullptr, "Parameters", createParameterLayout())
+{
+}
+#else
+SaturnationAudioProcessor::SaturnationAudioProcessor()
     : AudioProcessor (BusesProperties()
     #if ! JucePlugin_IsMidiEffect
         #if ! JucePlugin_IsSynth
             .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         #endif
-        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+            .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
     #endif
-    ),
+      ),
       apvts (*this, nullptr, "Parameters", createParameterLayout())
-#endif
 {
 }
+#endif
 
 SaturnationAudioProcessor::~SaturnationAudioProcessor() {}
 
@@ -93,6 +98,7 @@ void SaturnationAudioProcessor::changeProgramName (int index, const juce::String
 void SaturnationAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused (samplesPerBlock);
+    currentSampleRate = sampleRate;
 
     // Pivot frequency for tilt-style tone control (dark <-> bright)
     const auto lowpassCoefficients = juce::IIRCoefficients::makeLowPass (sampleRate, 1200.0);
@@ -101,17 +107,64 @@ void SaturnationAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
         filter.setCoefficients (lowpassCoefficients);
         filter.reset();
     }
-	
-	auto hp = juce::IIRCoefficients::makeHighPass(sampleRate, lowCutoffFrequency);
-	auto lp = juce::IIRCoefficients::makeLowPass (sampleRate, highCutoffFrequency);
-	for (int ch = 0; ch < 2; ++ch)
-	{
-		lowCutFilters[(size_t)ch].setCoefficients(hp);
-		highCutFilters[(size_t)ch].setCoefficients(lp);
-	}	
+
+    updateCutoffFilterCoefficients();
 
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+}
+
+void SaturnationAudioProcessor::updateCutoffFilterCoefficients()
+{
+    const float lowCut = juce::jlimit (20.0f, 1000.0f, lowCutoffFrequency);
+    const float highCut = juce::jlimit (1000.0f, 20000.0f, highCutoffFrequency);
+    const float adjustedHighCut = juce::jmax (highCut, lowCut);
+
+    const bool newLowCutIsActive = lowCut > 20.0001f;        // auto-off at minimum
+    const bool newHighCutIsActive = adjustedHighCut < 19999.9f; // auto-off at maximum
+
+    if (newLowCutIsActive)
+    {
+        if (!lowCutIsActive || std::abs (lowCut - lastLowCutoffFrequency) > 0.001f)
+        {
+            auto hp = juce::IIRCoefficients::makeHighPass (currentSampleRate, lowCut);
+            for (auto& filter : lowCutFilters)
+            {
+                filter.setCoefficients (hp);
+                if (!lowCutIsActive)
+                    filter.reset();
+            }
+        }
+    }
+    else if (lowCutIsActive)
+    {
+        for (auto& filter : lowCutFilters)
+            filter.reset();
+    }
+
+    if (newHighCutIsActive)
+    {
+        if (!highCutIsActive || std::abs (adjustedHighCut - lastHighCutoffFrequency) > 0.001f)
+        {
+            auto lp = juce::IIRCoefficients::makeLowPass (currentSampleRate, adjustedHighCut);
+            for (auto& filter : highCutFilters)
+            {
+                filter.setCoefficients (lp);
+                if (!highCutIsActive)
+                    filter.reset();
+            }
+        }
+    }
+    else if (highCutIsActive)
+    {
+        for (auto& filter : highCutFilters)
+            filter.reset();
+    }
+
+    lastLowCutoffFrequency = lowCut;
+    lastHighCutoffFrequency = adjustedHighCut;
+    lowCutIsActive = newLowCutIsActive;
+    highCutIsActive = newHighCutIsActive;
 }
 
 void SaturnationAudioProcessor::releaseResources()
@@ -119,8 +172,12 @@ void SaturnationAudioProcessor::releaseResources()
     for (auto& filter : toneLowpass)
         filter.reset();
 
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+	for (auto& filter : lowCutFilters)
+		filter.reset();
+	
+	for (auto& filter : highCutFilters)
+		filter.reset();
+
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -151,11 +208,8 @@ bool SaturnationAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 
 float SaturnationAudioProcessor::applySaturation(float sample)
 {
-	// Ensure driveAmount is within the expected range
-	driveAmount = juce::jlimit (0.1f, 10.0f, driveAmount);
-
 	// apply drive amount to the input signal
-	sample *= driveAmount;
+	sample *= driveLinear;
 
 	switch (saturationMode)
 	{
@@ -180,62 +234,42 @@ float SaturnationAudioProcessor::applySaturation(float sample)
 
 float SaturnationAudioProcessor::applyToneControl(float sample, int channel)
 {
-	// Ensure toneAmount is within the expected range
-	toneAmount = juce::jlimit (-1.0f, 1.0f, toneAmount);
-
-	// Convert toneAmount (-1.0 to 1.0) to a tilt in dB (-maxTiltDb to +maxTiltDb)
-    const float maxTiltDb = 6.0f;
-    const float tiltDb = toneAmount * maxTiltDb;
-
-	// Calculate the gain for the high and low frequencies based on the tilt amount
-	// if toneAmount is positive, gHigh > 1 and gLow < 1, boosting highs and cutting lows
-	// if toneAmount is negative, gHigh < 1 and gLow > 1, cutting highs and boosting lows
-    const float gHigh = std::pow (10.0f,  tiltDb / 20.0f);
-    const float gLow  = std::pow (10.0f, -tiltDb / 20.0f);
-
-    const int safeChannel = juce::jlimit (0, static_cast<int> (toneLowpass.size()) - 1, channel);
+	const int safeChannel = juce::jlimit (0, static_cast<int> (toneLowpass.size()) - 1, channel);
 
 	// Apply the low-pass filter to get the low-frequency content, and subtract this from the original signal to get the high-frequency content
-    const float low = toneLowpass[static_cast<size_t> (safeChannel)].processSingleSampleRaw (sample);
-    const float high = sample - low;
+	const float low = toneLowpass[static_cast<size_t> (safeChannel)].processSingleSampleRaw (sample);
+	const float high = sample - low;
 
 	// Combine the low and high parts with their respective gains to create the final output
-    return (low * gLow) + (high * gHigh);
+	return (low * gLow) + (high * gHigh);
 }
 
 float	SaturnationAudioProcessor::applyCutoff(float sample, int channel)
 {
-	// Ensure cutoff frequencies are within the expected range
-	lowCutoffFrequency = juce::jlimit (0.0f, 1000.0f, lowCutoffFrequency);
-	highCutoffFrequency = juce::jlimit (1000.0f, 20000.0f, highCutoffFrequency);
-
-	// Ensure that the high cutoff frequency is always at least equal or above the low cutoff frequency to avoid filter instability
-	highCutoffFrequency = juce::jmax(highCutoffFrequency, lowCutoffFrequency);
-
 	// Ensure that the channel index is within the bounds of the filter arrays
 	const int safeChannel = juce::jlimit (0, static_cast<int> (lowCutFilters.size()) - 1, channel);
 
-	// apply lowcut
-	float y = lowCutFilters[(size_t)safeChannel].processSingleSampleRaw(sample);
+    float y = sample;
 
-	// apply highcut
-	y = highCutFilters[(size_t)safeChannel].processSingleSampleRaw(y);
+    if (lowCutIsActive)
+        y = lowCutFilters[(size_t) safeChannel].processSingleSampleRaw (y);
+
+    if (highCutIsActive)
+        y = highCutFilters[(size_t) safeChannel].processSingleSampleRaw (y);
 
 	return y;
 }
 
 float	SaturnationAudioProcessor::applyMix(float drySample, float wetSample)
 {
-	// Ensure mixAmount is within the expected range
-	mixAmount = juce::jlimit (0.0f, 1.0f, mixAmount);
-
 	// Linear crossfade between dry and wet signals based on mixAmount
-	return (drySample * (1.0f - mixAmount)) + (wetSample * mixAmount);
+	return (drySample * (1.0f - mixLinear)) + (wetSample * mixLinear);
 }
 
 void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 	juce::ScopedNoDenormals noDenormals;
+    juce::ignoreUnused (midiMessages);
 	auto totalNumInputChannels  = getTotalNumInputChannels();
 	auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -244,6 +278,22 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 
 	this->updateParameters();
+	this->precalculateAllValues();
+
+    const float currentLowCut = juce::jlimit (20.0f, 1000.0f, lowCutoffFrequency);
+    const float currentHighCut = juce::jmax (juce::jlimit (1000.0f, 20000.0f, highCutoffFrequency), currentLowCut);
+    const bool currentLowCutIsActive = currentLowCut > 20.0001f;
+    const bool currentHighCutIsActive = currentHighCut < 19999.9f;
+    if (std::abs (currentLowCut - lastLowCutoffFrequency) > 0.001f
+     || std::abs (currentHighCut - lastHighCutoffFrequency) > 0.001f
+     || currentLowCutIsActive != lowCutIsActive
+     || currentHighCutIsActive != highCutIsActive)
+    {
+        updateCutoffFilterCoefficients();
+    }
+
+	if (!pluginIsEnabled)
+		return ;
 
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
@@ -251,11 +301,6 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
-			if (!pluginIsEnabled)
-			{
-				continue;
-			}
-
 			const float cutoffSample = applyCutoff(channelData[sample], channel);
             const float tonedSample = applyToneControl(cutoffSample, channel);
             const float wetSample = applySaturation(tonedSample);
@@ -279,15 +324,29 @@ juce::AudioProcessorEditor* SaturnationAudioProcessor::createEditor()
 //==============================================================================
 void SaturnationAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+	// use to restore your parameters from this memory block, whose contents will have been created by the getStateInformation() call.
+    if (auto state = apvts.copyState(); state.isValid())
+    {
+        std::unique_ptr<juce::XmlElement> xml (state.createXml());
+        copyXmlToBinary (*xml, destData);
+    }
 }
 
 void SaturnationAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState != nullptr)
+    {
+        auto newTree = juce::ValueTree::fromXml (*xmlState);
+
+        if (newTree.isValid() && newTree.hasType (apvts.state.getType()))
+            apvts.replaceState (newTree);
+    }
+
+	// After loading new state, update internal parameters to match the new values
+    updateParameters();
+	precalculateAllValues();
 }
 
 //==============================================================================

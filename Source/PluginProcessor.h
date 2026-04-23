@@ -67,29 +67,46 @@ private:
 	juce::AudioProcessorValueTreeState					apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout	createParameterLayout();
 	void												updateParameters();
+	void												precalculateAllValues();
 
 
 	//=========================== General Parameters ============================
-	bool							pluginIsEnabled = false;					// Master enable/disable for the plugin
+	bool							pluginIsEnabled = true;						// Master enable/disable for the plugin
 
     //=========================== Saturation Parameters ============================
     SaturationMode					saturationMode = SaturationMode::HardClip;	// Saturation mode
 	float							driveAmount = 5.0f;							// Augment signal before clipping (0.1 to 10.0)
 	float							applySaturation(float sample);
 
+	//precalculated values for saturation
+	float							driveLinear;
+
 	//=========================== Tone Control Parameters ============================
 	float							toneAmount = 0.0f;							// Tone control dark to bright (-1.0 to 1.0)
   	std::array<juce::IIRFilter, 2>	toneLowpass;								// Per-channel low-pass for tilt tone control
 	float							applyToneControl(float sample, int channel);
-	
+
+	//precalculated values for tone control
+	float 							gHigh;
+	float							gLow;
+
 	//=========================== Cutoff Control Parameters ============================
-	float							lowCutoffFrequency = 0.0f;					// Cutoff frequency for the low-pass filter (0Hz to 1kHz)
-	float							highCutoffFrequency = 20000.0f;				// Cutoff frequency for the high-pass filter(20kHz to 1kHz)
-	std::array<juce::IIRFilter, 2>	lowCutFilters;   							// high-pass
-	std::array<juce::IIRFilter, 2>	highCutFilters;  							// low-pass
+    float							lowCutoffFrequency = 20.0f;					// High-pass cutoff frequency used for low cut (20Hz to 1kHz)
+    float							highCutoffFrequency = 20000.0f;				// Low-pass cutoff frequency used for high cut (20kHz to 1kHz)
+    std::array<juce::IIRFilter, 2>	lowCutFilters;   							// High-pass filters (low cut)
+    std::array<juce::IIRFilter, 2>	highCutFilters;  							// Low-pass filters (high cut)
+    double							currentSampleRate = 44100.0;
+    float							lastLowCutoffFrequency = -1.0f;
+    float							lastHighCutoffFrequency = -1.0f;
+	bool							lowCutIsActive = false;
+	bool							highCutIsActive = false;
+    void							updateCutoffFilterCoefficients();
 	float							applyCutoff(float sample, int channel);
 
 	//=========================== Mix Control Parameters ============================
 	float							applyMix(float drySample, float wetSample);
-	float							mixAmount = 0.5f;							// Mix between dry and wet signal (0.0 to 1.0)	
+	float							mixAmount = 0.5f;							// Mix between dry and wet signal (0.0 to 1.0)
+
+	//precalculated values for mix control
+	float 							mixLinear;
 };
