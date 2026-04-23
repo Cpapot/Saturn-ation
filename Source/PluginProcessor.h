@@ -63,6 +63,13 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
 
+	//=========================== apvts ============================
+	juce::AudioProcessorValueTreeState					apvts;
+    juce::AudioProcessorValueTreeState::ParameterLayout	createParameterLayout();
+	void												updateParameters();
+
+
+	//=========================== General Parameters ============================
 	bool							pluginIsEnabled = false;					// Master enable/disable for the plugin
 
     //=========================== Saturation Parameters ============================

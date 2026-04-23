@@ -25,6 +25,7 @@ target_compile_definitions(Saturnation PUBLIC
 target_sources(Saturnation PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+	Source/apvts.cpp
 )
 
 # 4. Libraries

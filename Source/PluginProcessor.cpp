@@ -12,21 +12,20 @@
 //==============================================================================
 SaturnationAudioProcessor::SaturnationAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor (BusesProperties()
+    #if ! JucePlugin_IsMidiEffect
+        #if ! JucePlugin_IsSynth
+            .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        #endif
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+    #endif
+    ),
+      apvts (*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
 }
 
-SaturnationAudioProcessor::~SaturnationAudioProcessor()
-{
-}
+SaturnationAudioProcessor::~SaturnationAudioProcessor() {}
 
 //==============================================================================
 const juce::String SaturnationAudioProcessor::getName() const
@@ -243,9 +242,11 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear (i, 0, buffer.getNumSamples());
 
+
+	this->updateParameters();
+
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
-
 		auto* channelData = buffer.getWritePointer (channel);
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
