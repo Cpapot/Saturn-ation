@@ -313,11 +313,11 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
-			const float cutoffSample = applyCutoff(channelData[sample], channel);
-            const float tonedSample = applyToneControl(cutoffSample, channel);
-            const float wetSample = applySaturation(tonedSample);
-
-			channelData[sample] = applyMix(channelData[sample], wetSample);
+			const float drySample   = channelData[sample];
+			const float tonedSample = applyToneControl (drySample, channel);
+			const float satSample   = applySaturation (tonedSample);
+			const float wetSample   = applyCutoff (satSample, channel);
+			channelData[sample]		= applyMix (drySample, wetSample);
 		}
 	}
 }
