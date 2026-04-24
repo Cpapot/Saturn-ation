@@ -10,6 +10,8 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "SaturnKnobLookAndFeel.h"
+
 
 //==============================================================================
 /**
@@ -27,7 +29,14 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    SaturnationAudioProcessor& audioProcessor;
+    SaturnationAudioProcessor&			audioProcessor;
+
+	SaturnKnobLookAndFeel				knobLnf;
+	juce::Slider						driveKnob, characterKnob, toneKnob, \
+										lowCutKnob, highCutKnob, mixKnob;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> 
+										driveAtt, characterAtt, toneAtt, \
+										lowCutAtt, highCutAtt, mixAtt;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessorEditor)
 };

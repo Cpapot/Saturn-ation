@@ -26,6 +26,7 @@ target_sources(Saturnation PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
 	Source/apvts.cpp
+	Source/SaturnKnobLookAndFeel.cpp
 )
 
 # 4. Libraries
