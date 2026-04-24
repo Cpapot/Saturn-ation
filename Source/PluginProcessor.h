@@ -59,16 +59,16 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+	juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
 
 	//=========================== apvts ============================
-	juce::AudioProcessorValueTreeState					apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout	createParameterLayout();
 	void												updateParameters();
 	void												precalculateAllValues();
-
+	juce::AudioProcessorValueTreeState					apvts;
 
 	//=========================== General Parameters ============================
 	bool							pluginIsEnabled = true;						// Master enable/disable for the plugin

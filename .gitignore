@@ -15,6 +15,7 @@
 *.vcxproj
 *.filters
 *.user
+*.vscode/
 
 # --- JUCE & Projucer (if present) ---
 # Ignore local configuration files

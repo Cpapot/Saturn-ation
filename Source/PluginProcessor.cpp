@@ -208,28 +208,40 @@ bool SaturnationAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 
 float SaturnationAudioProcessor::applySaturation(float sample)
 {
+	if (driveLinear <= 0.0001f)
+		return sample;
+
+	const float preGain = 1.0f + (driveLinear * 2.0f);
 	// apply drive amount to the input signal
-	sample *= driveLinear;
+	float x = sample * preGain;
+	float y = x;
 
 	switch (saturationMode)
 	{
 		// Hard clip: limiter between -threshold and +threshold
 		case SaturationMode::HardClip:
-		return std::clamp(sample, -1.0f, 1.0f);
+			y = std::clamp (x, -1.0f, 1.0f);
+			break;
 		
 		// Tube: use the hyperbolic tangent function to create a soft clipping effect
 		case SaturationMode::Tube:
-			return std::tanh(sample);
+			y = std::tanh (x);
+			break;
 		
 		// Tape: use a formula that simulates the saturation characteristics of tape machines
 		case SaturationMode::Tape: {
-			float absX = std::abs(sample);
-			return sample / (1.0f + absX * 2.0f);
+			const float absX = std::abs (x);
+			y = x / (1.0f + absX * 2.0f);
+			break;
 		}
 		
 		default:
-			return sample;
+			y = x;
+			break;
 	}
+	// compensate for perceived loudness increase
+	const float loundessCompensation = 1.0f + (driveLinear * 0.10f);
+	return y * loundessCompensation;
 }
 
 float SaturnationAudioProcessor::applyToneControl(float sample, int channel)

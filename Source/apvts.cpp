@@ -11,9 +11,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         "pluginIsEnabled", "Plugin Enabled", true));
 
-	// Drive Amount (0.1 to 10.0)
+	// Drive Amount (0.0 to 10.0)
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        "driveAmount", "Drive", 0.1f, 10.0f, 5.0f));
+        "driveAmount", "Drive", 0.0f, 10.0f, 0.0f));
 
 	// Saturation Mode (0 = HardClip, 1 = Tube, 2 = Tape)
 	params.push_back (std::make_unique<juce::AudioParameterChoice> (
@@ -55,7 +55,7 @@ void		SaturnationAudioProcessor::updateParameters()
 void SaturnationAudioProcessor::precalculateAllValues()
 {
 	// Ensure driveAmount is within the expected range
-	driveLinear = juce::jlimit (0.1f, 10.0f, driveAmount);
+	driveLinear = juce::jlimit (0.0f, 10.0f, driveAmount);
 
 	const float maxTiltDb = 6.0f;
 	// Ensure driveAmount is within the expected range
