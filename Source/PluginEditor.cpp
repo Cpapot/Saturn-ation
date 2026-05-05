@@ -8,6 +8,20 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "BinaryData.h"
+
+namespace
+{
+    juce::Image getBackgroundImage()
+    {
+        static const juce::Image backgroundImage = []
+        {
+            return juce::ImageCache::getFromMemory(BinaryData::background_png, BinaryData::background_pngSize);
+        }();
+
+        return backgroundImage;
+    }
+}
 
 //==============================================================================
 SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAudioProcessor& p)
@@ -54,11 +68,19 @@ SaturnationAudioProcessorEditor::~SaturnationAudioProcessorEditor()
 //==============================================================================
 void SaturnationAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::FontOptions (15.0f));
+    auto backgroundImage = getBackgroundImage();
+    if (backgroundImage.isValid())
+    {
+        g.drawImageWithin(backgroundImage,
+                          0, 0,
+                          getWidth(), getHeight(),
+                          juce::RectanglePlacement::stretchToFit,
+                          false);
+    }
+    else
+    {
+        g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    }
 }
 
 void SaturnationAudioProcessorEditor::resized()

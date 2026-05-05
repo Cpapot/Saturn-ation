@@ -8,6 +8,7 @@ add_subdirectory("$ENV{USERPROFILE}/Documents/JUCE" JUCE)
 # 1b. Embedded assets
 juce_add_binary_data(SaturnationAssets
     SOURCES
+        assets/background.png
         assets/knob_512x512.png
 )
 

@@ -1,5 +1,4 @@
 #include "SaturnKnobLookAndFeel.h"
-
 #include "BinaryData.h"
 
 namespace
