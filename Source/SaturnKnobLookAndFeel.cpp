@@ -14,15 +14,6 @@ namespace
     }
 }
 
-SaturnKnobLookAndFeel::SaturnKnobLookAndFeel()
-{
-}
-
-SaturnKnobLookAndFeel::~SaturnKnobLookAndFeel()
-{
-    // Destructor - cleanup is handled by JUCE automatically
-}
-
 void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, \
 			float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, \
 			juce::Slider& slider)

@@ -64,8 +64,6 @@ SaturnationAudioProcessorEditor::~SaturnationAudioProcessorEditor()
 	lowCutKnob.setLookAndFeel(nullptr);
 	highCutKnob.setLookAndFeel(nullptr);
 	mixKnob.setLookAndFeel(nullptr);
-	
-	// ScopedPointer will automatically delete attachments in proper order
 }
 
 //==============================================================================
@@ -88,8 +86,6 @@ void SaturnationAudioProcessorEditor::paint (juce::Graphics& g)
 
 void SaturnationAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
 	auto area = getLocalBounds().reduced(24);
 
 	// 3 knobs en haut, 3 en bas
