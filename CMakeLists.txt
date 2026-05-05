@@ -5,6 +5,12 @@ project(SATURN_ATION VERSION 0.0.1)
 # 1. Framework JUCE
 add_subdirectory("$ENV{USERPROFILE}/Documents/JUCE" JUCE) 
 
+# 1b. Embedded assets
+juce_add_binary_data(SaturnationAssets
+    SOURCES
+        assets/knob_512x512.png
+)
+
 # 2. Plugin Definition
 juce_add_plugin(Saturnation
     COMPANY_NAME "MyCompany"
@@ -35,6 +41,7 @@ target_link_libraries(Saturnation PRIVATE
     juce::juce_dsp
     juce::juce_gui_basics
     juce::juce_gui_extra
+    SaturnationAssets
 )
 
 target_include_directories(Saturnation PRIVATE JuceLibraryCode)
