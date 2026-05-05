@@ -16,6 +16,7 @@
 *.filters
 *.user
 *.vscode/
+/out/
 
 # --- JUCE & Projucer (if present) ---
 # Ignore local configuration files

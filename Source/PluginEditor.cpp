@@ -14,12 +14,7 @@ namespace
 {
     juce::Image getBackgroundImage()
     {
-        static const juce::Image backgroundImage = []
-        {
-            return juce::ImageCache::getFromMemory(BinaryData::background_png, BinaryData::background_pngSize);
-        }();
-
-        return backgroundImage;
+		return juce::ImageCache::getFromMemory(BinaryData::background_png, BinaryData::background_pngSize);
     }
 }
 
@@ -57,7 +52,15 @@ SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAud
 
 SaturnationAudioProcessorEditor::~SaturnationAudioProcessorEditor()
 {
-	// Reset look and feel before destruction
+	// Detach APVTS bindings first so no UI callbacks can hit partially destroyed controls.
+	driveAtt = nullptr;
+	characterAtt = nullptr;
+	toneAtt = nullptr;
+	lowCutAtt = nullptr;
+	highCutAtt = nullptr;
+	mixAtt = nullptr;
+
+	// Then clear custom look-and-feel pointers from all controls.
 	driveKnob.setLookAndFeel(nullptr);
 	characterKnob.setLookAndFeel(nullptr);
 	toneKnob.setLookAndFeel(nullptr);

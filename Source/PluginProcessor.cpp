@@ -33,6 +33,10 @@ SaturnationAudioProcessor::SaturnationAudioProcessor()
 SaturnationAudioProcessor::~SaturnationAudioProcessor()
 {
 	isBeingDestroyed.store(true, std::memory_order_release);
+    suspendProcessing(true);
+
+    // Wait for any in-flight audio callback to finish before tearing down DSP state.
+    const juce::ScopedLock callbackGuard(getCallbackLock());
 	
 	// Clean up any active audio processing state
 	for (auto& filter : toneLowpass)

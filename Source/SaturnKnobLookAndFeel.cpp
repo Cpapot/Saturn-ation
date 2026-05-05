@@ -5,14 +5,43 @@ namespace
 {
     juce::Image getKnobImage()
     {
-        static const juce::Image knobImage = []
-        {
-            return juce::ImageCache::getFromMemory(BinaryData::knob_512x512_png, BinaryData::knob_512x512_pngSize);
-        }();
-
-        return knobImage;
+        return juce::ImageCache::getFromMemory(BinaryData::knob_512x512_png, BinaryData::knob_512x512_pngSize);
     }
 }
+
+SaturnKnobLookAndFeel::SaturnKnobLookAndFeel() = default;
+SaturnKnobLookAndFeel::~SaturnKnobLookAndFeel() = default;
+
+void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosProportional, float radius, juce::Point<float> centre)
+{
+    const int totalLEDs = 20;
+    const float startDeg = 120.0f;
+    const float arcDeg = 300.0f; 
+    const float ledOffset = 1.0f;
+    const float ledSize = 3.0f;
+    const juce::Colour ledOn = juce::Colour(0xffc6ff5c);
+    const juce::Colour ledOff = juce::Colour(0x33222222);
+
+
+    const float startRad = juce::degreesToRadians(startDeg);
+    const float arcRad   = juce::degreesToRadians(arcDeg);
+
+    const int lit = juce::jlimit (0, totalLEDs, (int)std::round (sliderPosProportional * (float)totalLEDs));
+
+    const float ledRadius = radius + ledOffset + ledSize * 0.5f;
+    for (int i = 0; i < totalLEDs; ++i)
+    {
+        const float t = (totalLEDs == 1) ? 0.0f : (float)i / (float)(totalLEDs - 1);
+        const float theta = startRad + t * arcRad;
+
+        const float cx = centre.x + std::cos(theta) * ledRadius;
+        const float cy = centre.y + std::sin(theta) * ledRadius;
+
+        g.setColour(i < lit ? ledOn : ledOff);
+        g.fillEllipse(cx - ledSize * 0.5f, cy - ledSize * 0.5f, ledSize, ledSize);
+    }
+}
+
 
 void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, \
 			float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, \
@@ -47,6 +76,7 @@ void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
                 centre.y - scale * (sinAngle * halfWidth + cosAngle * halfHeight));
 
             g.drawImageTransformed(knobImage, transform);
+            drawLedOutline(g, sliderPosProportional, radius, centre);
         }
         else
         {
@@ -55,5 +85,6 @@ void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
                               Colour(0xff1e1e1e), centre.x, centre.y + radius, false);
             g.setGradientFill(bg);
             g.fillEllipse(bounds);
+            drawLedOutline(g, sliderPosProportional, radius, centre);
         }
 }
