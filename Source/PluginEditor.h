@@ -34,7 +34,7 @@ private:
 	SaturnKnobLookAndFeel				knobLnf;
 	juce::Slider						driveKnob, characterKnob, toneKnob, \
 										lowCutKnob, highCutKnob, mixKnob;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> 
+	juce::ScopedPointer<juce::AudioProcessorValueTreeState::SliderAttachment> 
 										driveAtt, characterAtt, toneAtt, \
 										lowCutAtt, highCutAtt, mixAtt;
 

@@ -14,6 +14,15 @@ namespace
     }
 }
 
+SaturnKnobLookAndFeel::SaturnKnobLookAndFeel()
+{
+}
+
+SaturnKnobLookAndFeel::~SaturnKnobLookAndFeel()
+{
+    // Destructor - cleanup is handled by JUCE automatically
+}
+
 void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, \
 			float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, \
 			juce::Slider& slider)
@@ -29,7 +38,7 @@ void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
         const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
 
         auto knobImage = getKnobImage();
-        if (knobImage.isValid())
+        if (knobImage.isValid() && knobImage.getWidth() > 0 && knobImage.getHeight() > 0)
         {
             const auto imageWidth = (float)knobImage.getWidth();
             const auto imageHeight = (float)knobImage.getHeight();

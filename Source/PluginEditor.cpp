@@ -27,7 +27,7 @@ namespace
 SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setSize (704, 384);
+    setSize (600, 300);
 	auto setupKnob = [this](juce::Slider& s)
 	{
 		s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
@@ -47,22 +47,25 @@ SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAud
 	setupKnob(mixKnob);
 
 	auto& apvts = audioProcessor.getAPVTS();
-	driveAtt		= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "driveAmount",         driveKnob);
-	characterAtt	= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "saturationMode",      characterKnob);
-	toneAtt			= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "toneAmount",          toneKnob);
-	lowCutAtt		= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "lowCutoffFrequency",  lowCutKnob);
-	highCutAtt		= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "highCutoffFrequency", highCutKnob);
-	mixAtt			= std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "mixAmount",           mixKnob);
+	driveAtt		= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "driveAmount",         driveKnob);
+	characterAtt	= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "saturationMode",      characterKnob);
+	toneAtt			= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "toneAmount",          toneKnob);
+	lowCutAtt		= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "lowCutoffFrequency",  lowCutKnob);
+	highCutAtt		= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "highCutoffFrequency", highCutKnob);
+	mixAtt			= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "mixAmount",           mixKnob);
 }
 
 SaturnationAudioProcessorEditor::~SaturnationAudioProcessorEditor()
 {
+	// Reset look and feel before destruction
 	driveKnob.setLookAndFeel(nullptr);
 	characterKnob.setLookAndFeel(nullptr);
 	toneKnob.setLookAndFeel(nullptr);
 	lowCutKnob.setLookAndFeel(nullptr);
 	highCutKnob.setLookAndFeel(nullptr);
 	mixKnob.setLookAndFeel(nullptr);
+	
+	// ScopedPointer will automatically delete attachments in proper order
 }
 
 //==============================================================================

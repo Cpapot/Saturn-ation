@@ -30,7 +30,18 @@ SaturnationAudioProcessor::SaturnationAudioProcessor()
 }
 #endif
 
-SaturnationAudioProcessor::~SaturnationAudioProcessor() {}
+SaturnationAudioProcessor::~SaturnationAudioProcessor()
+{
+	isBeingDestroyed.store(true, std::memory_order_release);
+	
+	// Clean up any active audio processing state
+	for (auto& filter : toneLowpass)
+		filter.reset();
+	for (auto& filter : lowCutFilters)
+		filter.reset();
+	for (auto& filter : highCutFilters)
+		filter.reset();
+}
 
 //==============================================================================
 const juce::String SaturnationAudioProcessor::getName() const
@@ -280,6 +291,10 @@ float	SaturnationAudioProcessor::applyMix(float drySample, float wetSample)
 
 void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+	// Exit early if plugin is being destroyed
+	if (isBeingDestroyed.load(std::memory_order_acquire))
+		return;
+	
 	juce::ScopedNoDenormals noDenormals;
     juce::ignoreUnused (midiMessages);
 	auto totalNumInputChannels  = getTotalNumInputChannels();

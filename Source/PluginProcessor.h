@@ -63,6 +63,9 @@ public:
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
+	
+	// Destruction safety flag
+	std::atomic<bool> isBeingDestroyed { false };
 
 	//=========================== apvts ============================
     juce::AudioProcessorValueTreeState::ParameterLayout	createParameterLayout();
