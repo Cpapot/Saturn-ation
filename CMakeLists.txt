@@ -2,6 +2,19 @@ cmake_minimum_required(VERSION 3.15)
 
 project(SATURN_ATION VERSION 0.0.1)
 
+# ============================================================================
+# macOS ARM64 (Apple Silicon M1/M2/M3) Configuration
+# ============================================================================
+# For Release builds, enable macOS ARM64 cross-compilation support
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
+    # Set default architecture for macOS to ARM64 (Apple Silicon)
+    if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS target architectures")
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version for ARM64")
+        message(STATUS "Configuring for macOS ARM64 (Apple Silicon M1/M2/M3)")
+    endif()
+endif()
+
 # 1. Framework JUCE
 # Adjust the path to your JUCE directory as needed.
 add_subdirectory("$ENV{USERPROFILE}/Documents/JUCE" JUCE)
@@ -29,6 +42,27 @@ juce_add_plugin(Saturnation
 target_compile_definitions(Saturnation PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0
 )
+
+# ============================================================================
+# Release Build Optimization for macOS ARM64
+# ============================================================================
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Add ARM64-specific compiler flags for Release builds
+    if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        # Ensure ARM64 architecture in Release mode
+        target_compile_options(Saturnation PRIVATE
+            -arch arm64
+            -march=armv8-a
+            -mcpu=generic
+            -O3
+            -ffast-math
+        )
+        target_link_options(Saturnation PRIVATE
+            -arch arm64
+        )
+        message(STATUS "Applied ARM64 optimizations for Release build")
+    endif()
+endif()
 
 # 3. Sources Files
 target_sources(Saturnation PRIVATE
