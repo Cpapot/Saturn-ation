@@ -15,10 +15,13 @@ class SaturnKnobLookAndFeel : public juce::LookAndFeel_V4
 		SaturnKnobLookAndFeel();
 		~SaturnKnobLookAndFeel() override;
 
-		void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, \
+		void	drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, \
 			float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, \
 			juce::Slider& slider) override;
-	
+			
+		void	setDirection(int newDirection);
 	private:
-		void drawLedOutline(juce::Graphics& g, float sliderPosProportional, float radius, juce::Point<float> centre);
+		int		direction = 0; // 0: left to right, 1: right to left
+
+		void	drawLedOutline(juce::Graphics& g, float sliderPosProportional, float radius, juce::Point<float> centre);
 };

@@ -34,11 +34,23 @@ SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAud
 		addAndMakeVisible(s);
 	};
 
+	auto setupReversedKnob = [this](juce::Slider& s)
+	{
+		s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+		s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+		s.setLookAndFeel(&knobLnfReversed);
+		knobLnfReversed.setDirection(1);
+		s.setRotaryParameters(juce::MathConstants<float>::pi * 1.2f,  // start ~216°
+							juce::MathConstants<float>::pi * 2.8f,  // end   ~504°
+							true);
+		addAndMakeVisible(s);
+	};
+
 	setupKnob(driveKnob);
 	setupKnob(characterKnob);
 	setupKnob(toneKnob);
 	setupKnob(lowCutKnob);
-	setupKnob(highCutKnob);
+	setupReversedKnob(highCutKnob);
 	setupKnob(mixKnob);
 
 	auto& apvts = audioProcessor.getAPVTS();

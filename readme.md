@@ -7,6 +7,7 @@ TODO:
 
 -add cleaner png of the knob
 
+-add a direction to the knob (left right or right left) OK
 -add shadow to led outline
 -add glow to led outline
 -add outline to led outline

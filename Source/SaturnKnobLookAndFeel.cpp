@@ -12,6 +12,11 @@ namespace
 SaturnKnobLookAndFeel::SaturnKnobLookAndFeel() = default;
 SaturnKnobLookAndFeel::~SaturnKnobLookAndFeel() = default;
 
+void	SaturnKnobLookAndFeel::setDirection(int newDirection)
+{
+    direction = newDirection;
+}
+
 void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosProportional, float radius, juce::Point<float> centre)
 {
     const int totalLEDs = 20;
@@ -26,6 +31,11 @@ void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosPro
     const float startRad = juce::degreesToRadians(startDeg);
     const float arcRad   = juce::degreesToRadians(arcDeg);
 
+    if (direction == 1)
+    {
+        sliderPosProportional = 1.0f - sliderPosProportional;
+    }
+
     const int lit = juce::jlimit (0, totalLEDs, (int)std::round (sliderPosProportional * (float)totalLEDs));
 
     const float ledRadius = radius + ledOffset + ledSize * 0.5f;
@@ -37,7 +47,11 @@ void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosPro
         const float cx = centre.x + std::cos(theta) * ledRadius;
         const float cy = centre.y + std::sin(theta) * ledRadius;
 
-        g.setColour(i < lit ? ledOn : ledOff);
+        const bool isLedOn = (direction == 1)
+            ? (i >= totalLEDs - lit)  // right-to-left fill
+            : (i < lit);              // left-to-right fill
+
+        g.setColour(isLedOn ? ledOn : ledOff);
         g.fillEllipse(cx - ledSize * 0.5f, cy - ledSize * 0.5f, ledSize, ledSize);
     }
 }

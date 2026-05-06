@@ -31,7 +31,7 @@ private:
     // access the processor object that created it.
     SaturnationAudioProcessor&			audioProcessor;
 
-	SaturnKnobLookAndFeel				knobLnf;
+	SaturnKnobLookAndFeel				knobLnf, knobLnfReversed;
 	juce::Slider						driveKnob, characterKnob, toneKnob, \
 										lowCutKnob, highCutKnob, mixKnob;
 	juce::ScopedPointer<juce::AudioProcessorValueTreeState::SliderAttachment> 
