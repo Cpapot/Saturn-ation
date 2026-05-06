@@ -12,7 +12,7 @@ TODO:
 -add glow to led outline                                                            OK
 -add outline to led outline                                                         OK
 -when leds are off hide the green and the glow but show the outline of led outline  OK
--add text to knob
+-add text to knob                                                                   OK
 
 -add vu meter
 -add custom vu metter class with the figma design
