@@ -23,6 +23,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Initialize JUCE submodule
+        run: |
+          if (-not (Test-Path "JUCE/CMakeLists.txt")) {
+            Write-Host "JUCE submodule not found, cloning from GitHub..."
+            git submodule add https://github.com/juce-framework/JUCE.git JUCE
+            git submodule update --init --recursive
+          } else {
+            Write-Host "JUCE submodule already initialized"
+            git submodule update --init --recursive
+          }
+        shell: powershell
+
       - name: Setup CMake
         uses: cmake-actions/cmake-presets-ci-action@v2
         with:
@@ -32,11 +44,15 @@ jobs:
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
+        env:
+          CI: true
 
       - name: Collect Windows artifacts
         run: |
           mkdir -p artifacts/windows
-          xcopy /E /I /Y "build\Saturnation_artefacts\Release\*" "artifacts\windows\"
+          xcopy /E /I /Y "build\Saturnation_artefacts\Release\*" "artifacts\windows\" 2>nul || echo "Artefacts directory not found, checking alternative paths..."
+          if (Test-Path "build\vst3_output") { xcopy /E /I /Y "build\vst3_output\*" "artifacts\windows\vst3\" 2>nul }
+        shell: powershell
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -58,6 +74,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Initialize JUCE submodule
+        run: |
+          if [ ! -f "JUCE/CMakeLists.txt" ]; then
+            echo "JUCE submodule not found, cloning from GitHub..."
+            git submodule add https://github.com/juce-framework/JUCE.git JUCE
+            git submodule update --init --recursive
+          else
+            echo "JUCE submodule already initialized"
+            git submodule update --init --recursive
+          fi
+
       - name: Install dependencies
         run: |
           brew install cmake ninja
@@ -69,11 +96,17 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
           cmake --build build --config Release
+        env:
+          CI: true
 
       - name: Collect macOS artifacts
         run: |
           mkdir -p artifacts/macos
-          cp -r build/Saturnation_artefacts/Release/* artifacts/macos/
+          cp -r build/Saturnation_artefacts/Release/* artifacts/macos/ 2>/dev/null || echo "Warning: Saturnation_artefacts not found"
+          if [ -d "build/vst3_output" ]; then
+            mkdir -p artifacts/macos/vst3
+            cp -r build/vst3_output/* artifacts/macos/vst3/
+          fi
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4

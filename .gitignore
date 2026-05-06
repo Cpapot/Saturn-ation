@@ -1,6 +1,7 @@
 # --- CMake & Build ---
 # Ignore the entire CMake working directory
 /build/
+/build_check_flag_off/
 /.cmake/
 
 # --- Output Artifacts ---
