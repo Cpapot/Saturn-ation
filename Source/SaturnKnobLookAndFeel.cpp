@@ -22,11 +22,14 @@ void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosPro
     const int totalLEDs = 20;
     const float startDeg = 120.0f;
     const float arcDeg = 300.0f; 
-    const float ledOffset = 1.0f;
     const float ledSize = 3.0f;
+    const float ringExtraRadius = 1.0f;
+
     const juce::Colour ledOn = juce::Colour(0xffc6ff5c);
     const juce::Colour ledOff = juce::Colour(0x33222222);
-
+    const juce::Colour ledOutline = juce::Colour(0xff181b20);
+    const juce::Colour ledOutlineShadow = juce::Colour(0x66e2f3ff);
+    
 
     const float startRad = juce::degreesToRadians(startDeg);
     const float arcRad   = juce::degreesToRadians(arcDeg);
@@ -38,7 +41,7 @@ void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosPro
 
     const int lit = juce::jlimit (0, totalLEDs, (int)std::round (sliderPosProportional * (float)totalLEDs));
 
-    const float ledRadius = radius + ledOffset + ledSize * 0.5f;
+    const float ledRadius = radius - 4.0f + ledSize * 0.5f;
     for (int i = 0; i < totalLEDs; ++i)
     {
         const float t = (totalLEDs == 1) ? 0.0f : (float)i / (float)(totalLEDs - 1);
@@ -51,8 +54,31 @@ void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosPro
             ? (i >= totalLEDs - lit)  // right-to-left fill
             : (i < lit);              // left-to-right fill
 
-        g.setColour(isLedOn ? ledOn : ledOff);
-        g.fillEllipse(cx - ledSize * 0.5f, cy - ledSize * 0.5f, ledSize, ledSize);
+        const float ringDiameter = ledSize + 2.0f * ringExtraRadius;
+        
+        g.setColour(ledOutlineShadow);
+        g.fillEllipse(cx - ringDiameter * 0.5f, cy - ringDiameter * 0.5f, ringDiameter + 0.5f , ringDiameter + 0.5f);
+
+        g.setColour(ledOutline);
+        g.fillEllipse(cx - ringDiameter * 0.5f, cy - ringDiameter * 0.5f, ringDiameter, ringDiameter);
+
+        if (isLedOn)
+        {
+            for (int glow = 0; glow < 3; ++glow)
+            {
+                const float glowGrow = 0.5f + (float)glow * 1.5f;
+                const float glowAlpha = 0.14f - (float)glow * 0.05f;
+
+                g.setColour(ledOn.withAlpha(juce::jmax(0.0f, glowAlpha)));
+                g.fillEllipse(
+                    cx - (ledSize * 0.5f + glowGrow),
+                    cy - (ledSize * 0.5f + glowGrow),
+                    ledSize + glowGrow * 2.0f,
+                    ledSize + glowGrow * 2.0f);
+            }
+            g.setColour(ledOn);
+            g.fillEllipse(cx - ledSize * 0.5f, cy - ledSize * 0.5f, ledSize, ledSize);
+        }
     }
 }
 
