@@ -31,12 +31,15 @@ private:
     // access the processor object that created it.
     SaturnationAudioProcessor&			audioProcessor;
 
-	SaturnKnobLookAndFeel				knobLnf, knobLnfReversed;
-	juce::Slider						driveKnob, characterKnob, toneKnob, \
+    SaturnKnobLookAndFeel				driveKnobLnf, characterKnobLnf, toneKnobLnf,
+                    lowCutKnobLnf, highCutKnobLnf, mixKnobLnf;
+	  juce::Slider						driveKnob, characterKnob, toneKnob, \
 										lowCutKnob, highCutKnob, mixKnob;
-	juce::ScopedPointer<juce::AudioProcessorValueTreeState::SliderAttachment> 
+	  juce::ScopedPointer<juce::AudioProcessorValueTreeState::SliderAttachment> 
 										driveAtt, characterAtt, toneAtt, \
 										lowCutAtt, highCutAtt, mixAtt;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessorEditor)
+    void setupSlider(juce::Slider& slider, juce::LookAndFeel& lnf);
+
+  JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessorEditor)
 };

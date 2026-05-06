@@ -18,40 +18,36 @@ namespace
     }
 }
 
+void SaturnationAudioProcessorEditor::setupSlider(juce::Slider& slider, juce::LookAndFeel& lnf)
+{
+	slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+	slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+	slider.setLookAndFeel(&lnf);
+	slider.setRotaryParameters(juce::MathConstants<float>::pi * 1.2f,
+		juce::MathConstants<float>::pi * 2.8f,
+		true);
+	addAndMakeVisible(slider);
+}
+
 //==============================================================================
 SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
     setSize (600, 300);
-	auto setupKnob = [this](juce::Slider& s)
-	{
-		s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-		s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-		s.setLookAndFeel(&knobLnf);
-		s.setRotaryParameters(juce::MathConstants<float>::pi * 1.2f,  // start ~216°
-							juce::MathConstants<float>::pi * 2.8f,  // end   ~504°
-							true);
-		addAndMakeVisible(s);
-	};
+	driveKnobLnf.setKnobText("Drive");
+	characterKnobLnf.setKnobText("Type");
+	toneKnobLnf.setKnobText("Tone");
+	lowCutKnobLnf.setKnobText("LowCut");
+	highCutKnobLnf.setKnobText("HighCut");
+	mixKnobLnf.setKnobText("Mix");
+	highCutKnobLnf.setDirection(1);
 
-	auto setupReversedKnob = [this](juce::Slider& s)
-	{
-		s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-		s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-		s.setLookAndFeel(&knobLnfReversed);
-		knobLnfReversed.setDirection(1);
-		s.setRotaryParameters(juce::MathConstants<float>::pi * 1.2f,  // start ~216°
-							juce::MathConstants<float>::pi * 2.8f,  // end   ~504°
-							true);
-		addAndMakeVisible(s);
-	};
-
-	setupKnob(driveKnob);
-	setupKnob(characterKnob);
-	setupKnob(toneKnob);
-	setupKnob(lowCutKnob);
-	setupReversedKnob(highCutKnob);
-	setupKnob(mixKnob);
+	setupSlider(driveKnob, driveKnobLnf);
+	setupSlider(characterKnob, characterKnobLnf);
+	setupSlider(toneKnob, toneKnobLnf);
+	setupSlider(lowCutKnob, lowCutKnobLnf);
+	setupSlider(highCutKnob, highCutKnobLnf);
+	setupSlider(mixKnob, mixKnobLnf);
 
 	auto& apvts = audioProcessor.getAPVTS();
 	driveAtt		= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "driveAmount",         driveKnob);

@@ -7,6 +7,11 @@ namespace
     {
         return juce::ImageCache::getFromMemory(BinaryData::knob_512x512_png, BinaryData::knob_512x512_pngSize);
     }
+
+    juce::Font getKnobFont()
+    {
+        return juce::Font(juce::Typeface::createSystemTypefaceFor(BinaryData::Outfit_Regular_ttf, BinaryData::Outfit_Regular_ttfSize));
+    }
 }
 
 SaturnKnobLookAndFeel::SaturnKnobLookAndFeel() = default;
@@ -15,6 +20,27 @@ SaturnKnobLookAndFeel::~SaturnKnobLookAndFeel() = default;
 void	SaturnKnobLookAndFeel::setDirection(int newDirection)
 {
     direction = newDirection;
+}
+
+void	SaturnKnobLookAndFeel::setKnobText(const juce::String& newText)
+{
+    knobText = newText;
+}
+
+void	SaturnKnobLookAndFeel::drawText(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    if (knobText.isNotEmpty())
+    {
+        const juce::Colour textColour = juce::Colour(0xff7d8390);
+        const juce::Rectangle<float> textBounds(bounds.getX() + bounds.getWidth() * 0.3f    \
+                                                , bounds.getY() + bounds.getHeight() * 0.9f \
+                                                , bounds.getWidth() * 0.4f \
+                                                , bounds.getHeight() * 0.10f);
+
+        g.setColour(textColour);
+        g.setFont(getKnobFont().withHeight(10.0f));
+        g.drawFittedText(knobText, textBounds.toNearestInt(), juce::Justification::centred, 1);
+    }
 }
 
 void SaturnKnobLookAndFeel::drawLedOutline(juce::Graphics& g, float sliderPosProportional, float radius, juce::Point<float> centre)
@@ -117,6 +143,7 @@ void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
 
             g.drawImageTransformed(knobImage, transform);
             drawLedOutline(g, sliderPosProportional, radius, centre);
+            drawText(g, bounds);
         }
         else
         {
@@ -126,5 +153,6 @@ void SaturnKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
             g.setGradientFill(bg);
             g.fillEllipse(bounds);
             drawLedOutline(g, sliderPosProportional, radius, centre);
+            drawText(g, bounds);
         }
 }

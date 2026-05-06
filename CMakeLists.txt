@@ -11,6 +11,7 @@ juce_add_binary_data(SaturnationAssets
     SOURCES
         assets/background.png
         assets/knob_512x512.png
+        assets/Outfit_Regular.ttf
 )
 
 # 2. Plugin Definition
