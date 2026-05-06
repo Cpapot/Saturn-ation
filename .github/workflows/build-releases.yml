@@ -1,0 +1,169 @@
+name: Build Releases (Windows & macOS)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    tags:
+      - 'v*'
+
+jobs:
+  # ============================================================================
+  # Windows Build (x64)
+  # ============================================================================
+  build-windows:
+    runs-on: windows-latest
+    name: Build Windows (x64)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup CMake
+        uses: cmake-actions/cmake-presets-ci-action@v2
+        with:
+          presetName: 'default'
+
+      - name: Build Release (Windows)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Collect Windows artifacts
+        run: |
+          mkdir -p artifacts/windows
+          xcopy /E /I /Y "build\Saturnation_artefacts\Release\*" "artifacts\windows\"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: artifacts/windows/
+          retention-days: 1
+
+  # ============================================================================
+  # macOS Build (ARM64 - Apple Silicon M1/M2/M3)
+  # ============================================================================
+  build-macos:
+    runs-on: macos-latest
+    name: Build macOS (ARM64)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja
+
+      - name: Build Release (macOS ARM64)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          cmake --build build --config Release
+
+      - name: Collect macOS artifacts
+        run: |
+          mkdir -p artifacts/macos
+          cp -r build/Saturnation_artefacts/Release/* artifacts/macos/
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: artifacts/macos/
+          retention-days: 1
+
+  # ============================================================================
+  # Create Release with Artifacts
+  # ============================================================================
+  create-release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    name: Create Release
+    
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64
+          path: artifacts/windows/
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64
+          path: artifacts/macos/
+
+      - name: Create ZIP archives
+        run: |
+          mkdir -p releases
+          cd artifacts
+          zip -r ../releases/Saturn-ation-Windows-x64.zip windows/
+          zip -r ../releases/Saturn-ation-macOS-ARM64.zip macos/
+          cd ../releases
+          ls -lh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: releases/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # Optional: Continuous Artifacts (Latest build on every push)
+  # ============================================================================
+  upload-latest:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    name: Update Latest Build
+    
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64
+          path: artifacts/windows/
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64
+          path: artifacts/macos/
+
+      - name: Create ZIP archives
+        run: |
+          mkdir -p releases
+          cd artifacts
+          zip -r ../releases/Saturn-ation-Windows-x64-latest.zip windows/
+          zip -r ../releases/Saturn-ation-macOS-ARM64-latest.zip macos/
+
+      - name: Upload to releases (Overwrite latest)
+        uses: softprops/action-gh-release@v1
+        with:
+          files: releases/*
+          tag_name: latest
+          draft: false
+          prerelease: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
