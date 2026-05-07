@@ -35,17 +35,17 @@ jobs:
           }
         shell: powershell
 
-      - name: Setup Ninja
-        uses: ilammy/setup-ninja@v1
-
-      - name: Setup CMake
-        uses: lukka/get-cmake@v3
-        with:
-          cmakeVersion: latest
+      - name: Install dependencies (CMake + Ninja)
+        shell: powershell
+        run: |
+          choco install -y cmake ninja
+          refreshenv
+          cmake --version
+          ninja --version
 
       - name: Build Release (Windows)
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
         env:
           CI: true
