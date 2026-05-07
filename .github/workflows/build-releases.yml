@@ -36,9 +36,9 @@ jobs:
         shell: powershell
 
       - name: Setup CMake
-        uses: cmake-actions/cmake-presets-ci-action@v2
+        uses: lukka/get-cmake@latest
         with:
-          presetName: 'default'
+          cmakeVersion: 'latest'
 
       - name: Build Release (Windows)
         run: |

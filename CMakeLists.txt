@@ -152,6 +152,25 @@ if (TARGET Saturnation_Standalone)
     )
 endif()
 
+if (TARGET Saturnation_Standalone)
+    if (WIN32)
+        add_custom_command(TARGET Saturnation_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:Saturnation_Standalone>"
+                "${CMAKE_SOURCE_DIR}/Saturn-ation.exe"
+            COMMENT "Copying standalone executable for Release (Windows)"
+        )
+    elseif(APPLE)
+        # Option A: copy the .app bundle directory
+        add_custom_command(TARGET Saturnation_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "$<TARGET_BUNDLE_DIR:Saturnation_Standalone>"
+                "${CMAKE_SOURCE_DIR}/Saturn-ation.app"
+            COMMENT "Copying standalone app bundle for Release (macOS)"
+        )
+    endif()
+endif()
+
 # Cleanup target to keep repository root clean
 add_custom_target(clean_repo_artifacts
     COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_CURRENT_SOURCE_DIR}/Saturn-ation.exe"
