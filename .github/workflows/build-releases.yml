@@ -35,10 +35,13 @@ jobs:
           }
         shell: powershell
 
+      - name: Setup Ninja
+        uses: ilammy/setup-ninja@v1
+
       - name: Setup CMake
-        uses: lukka/get-cmake@latest
+        uses: lukka/get-cmake@v3
         with:
-          cmakeVersion: 'latest'
+          cmakeVersion: latest
 
       - name: Build Release (Windows)
         run: |
@@ -48,11 +51,21 @@ jobs:
           CI: true
 
       - name: Collect Windows artifacts
-        run: |
-          mkdir -p artifacts/windows
-          xcopy /E /I /Y "build\Saturnation_artefacts\Release\*" "artifacts\windows\" 2>nul || echo "Artefacts directory not found, checking alternative paths..."
-          if (Test-Path "build\vst3_output") { xcopy /E /I /Y "build\vst3_output\*" "artifacts\windows\vst3\" 2>nul }
         shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts/windows | Out-Null
+
+          $src = "build\Saturnation_artefacts\Release"
+          if (Test-Path $src) {
+            Copy-Item -Recurse -Force "$src\*" "artifacts\windows\"
+          } else {
+            Write-Host "Artefacts directory not found: $src"
+          }
+
+          if (Test-Path "build\vst3_output") {
+            New-Item -ItemType Directory -Force -Path artifacts/windows/vst3 | Out-Null
+            Copy-Item -Recurse -Force "build\vst3_output\*" "artifacts\windows\vst3\"
+          }
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4

@@ -143,16 +143,6 @@ endif()
 
 # If Standalone target exists, copy its Debug executable to a local debug folder for easy testing
 if (TARGET Saturnation_Standalone)
-    add_custom_command(TARGET Saturnation_Standalone POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${STANDALONE_DEBUG_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_BINARY_DIR}/Saturnation_artefacts/$<CONFIG>/Standalone/Saturn-ation.exe"
-            "$<IF:$<CONFIG:Debug>,${STANDALONE_DEBUG_DIR}/Saturn-ation.exe,${CMAKE_CURRENT_SOURCE_DIR}/Saturn-ation.exe>"
-        COMMENT "Copying standalone executable for $<CONFIG>"
-    )
-endif()
-
-if (TARGET Saturnation_Standalone)
     if (WIN32)
         add_custom_command(TARGET Saturnation_Standalone POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
