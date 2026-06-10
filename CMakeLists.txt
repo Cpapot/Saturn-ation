@@ -141,6 +141,19 @@ if (TARGET Saturnation_VST3 AND WIN32 AND SATURN_COPY_VST3_TO_WINDOWS_SYSTEM AND
     )
 endif()
 
+# Optional explicit install target (manual deployment)
+# This target is NOT built by default. Run it to copy the built VST3 to the system VST3 folder.
+if (TARGET Saturnation_VST3 AND WIN32)
+    add_custom_target(install_vst3
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${VST3_SYSTEM_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_CURRENT_BINARY_DIR}/Saturnation_artefacts/$<CONFIG>/VST3/Saturn-ation.vst3"
+            "${VST3_SYSTEM_DIR}/Saturn-ation.vst3"
+        DEPENDS Saturnation_VST3
+        COMMENT "Install Saturn-ation.vst3 to ${VST3_SYSTEM_DIR} (manual target)"
+    )
+endif()
+
 # If Standalone target exists, copy its Debug executable to a local debug folder for easy testing
 if (TARGET Saturnation_Standalone)
     if (WIN32)
