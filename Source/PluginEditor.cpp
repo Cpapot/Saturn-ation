@@ -31,7 +31,7 @@ void SaturnationAudioProcessorEditor::setupSlider(juce::Slider& slider, juce::Lo
 
 //==============================================================================
 SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+	: AudioProcessorEditor (&p), audioProcessor (p), driveMeter (audioProcessor)
 {
     setSize (600, 300);
 	driveKnobLnf.setKnobText("Drive");
@@ -48,6 +48,7 @@ SaturnationAudioProcessorEditor::SaturnationAudioProcessorEditor (SaturnationAud
 	setupSlider(lowCutKnob, lowCutKnobLnf);
 	setupSlider(highCutKnob, highCutKnobLnf);
 	setupSlider(mixKnob, mixKnobLnf);
+	addAndMakeVisible (driveMeter);
 
 	auto& apvts = audioProcessor.getAPVTS();
 	driveAtt		= new juce::AudioProcessorValueTreeState::SliderAttachment(apvts, "driveAmount",         driveKnob);
@@ -99,12 +100,22 @@ void SaturnationAudioProcessorEditor::resized()
 {
 	auto area = getLocalBounds().reduced(24);
 
-	// 3 knobs en haut, 3 en bas
+	// Reserve right area for the VU meter (around 22% width) so the image can keep its ratio and use the full height
+	const int meterWidth = std::max(60, (int) std::round (area.getWidth() * 0.22f));
+	auto meterArea = area.removeFromRight (meterWidth);
+	// Make the meter take the full height inside its area
+	driveMeter.setBounds (meterArea.reduced (1));
+
+	// 3 knobs en haut, 3 en bas in remaining area
 	auto top = area.removeFromTop(area.getHeight() / 2);
 	auto bottom = area;
 
 	const int knobSize = 120;
-	driveKnob.setBounds    (top.removeFromLeft(top.getWidth() / 3).withSizeKeepingCentre(knobSize, knobSize));
+
+	// Slightly tighten knob layout so buttons are closer
+	auto driveZone = top.removeFromLeft(std::max(1, top.getWidth() / 3));
+	// place drive knob in its zone
+	driveKnob.setBounds    (driveZone.withSizeKeepingCentre(knobSize, knobSize));
 	characterKnob.setBounds(top.removeFromLeft(top.getWidth() / 2).withSizeKeepingCentre(knobSize, knobSize));
 	toneKnob.setBounds     (top.withSizeKeepingCentre(knobSize, knobSize));
 

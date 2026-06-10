@@ -60,6 +60,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 	juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
+    float getDriveMeterLevel() const noexcept { return driveMeterLevel.load (std::memory_order_relaxed); }
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaturnationAudioProcessor)
@@ -80,9 +81,12 @@ private:
     SaturationMode					saturationMode = SaturationMode::HardClip;	// Saturation mode
 	float							driveAmount = 5.0f;							// Augment signal before clipping (0.1 to 10.0)
 	float							applySaturation(float sample);
+    std::atomic<float>					driveMeterLevel { 0.0f };
 
 	//precalculated values for saturation
 	float							driveLinear;
+	float							blockInputPeak = 0.0f;
+	float							blockOutputPeak = 0.0f;
 
 	//=========================== Tone Control Parameters ============================
 	float							toneAmount = 0.0f;							// Tone control dark to bright (-1.0 to 1.0)

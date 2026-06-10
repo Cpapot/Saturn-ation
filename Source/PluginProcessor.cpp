@@ -307,6 +307,8 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear (i, 0, buffer.getNumSamples());
 
+    float blockMeterPeak = 0.0f;
+
 
 	this->updateParameters();
 	this->precalculateAllValues();
@@ -324,7 +326,10 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     }
 
 	if (!pluginIsEnabled)
+    {
+        driveMeterLevel.store (0.0f, std::memory_order_relaxed);
 		return ;
+    }
 
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
@@ -333,12 +338,29 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 		for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
 		{
 			const float drySample   = channelData[sample];
+			blockInputPeak = juce::jmax (blockInputPeak, std::abs (drySample));
 			const float tonedSample = applyToneControl (drySample, channel);
 			const float satSample   = applySaturation (tonedSample);
+            blockOutputPeak = juce::jmax (blockOutputPeak, std::abs (satSample));
 			const float wetSample   = applyCutoff (satSample, channel);
 			channelData[sample]		= applyMix (drySample, wetSample);
 		}
 	}
+
+	float meterLevel = 0.0f;
+    if (blockInputPeak > 0.00001f && blockOutputPeak > 0.00001f)
+    {
+        const float gainRatio = blockOutputPeak / blockInputPeak;
+        const float gainReduction = gainRatio - 1.0f;
+        meterLevel = juce::jlimit (0.0f, 1.0f, gainReduction / 20.0f);
+    }
+    
+    const float previousLevel = driveMeterLevel.load (std::memory_order_relaxed);
+    const float decayedLevel = previousLevel * 0.88f;
+    driveMeterLevel.store (juce::jmax (meterLevel, decayedLevel), std::memory_order_relaxed);
+    
+    blockInputPeak = 0.0f;
+    blockOutputPeak = 0.0f;
 }
 
 //==============================================================================

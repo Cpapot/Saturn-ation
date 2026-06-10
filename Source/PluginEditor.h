@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "SaturnKnobLookAndFeel.h"
+#include "SaturnVuMeter.h"
 
 
 //==============================================================================
@@ -35,6 +36,7 @@ private:
                     lowCutKnobLnf, highCutKnobLnf, mixKnobLnf;
 	  juce::Slider						driveKnob, characterKnob, toneKnob, \
 										lowCutKnob, highCutKnob, mixKnob;
+    SaturnVuMeter					driveMeter;
 	  juce::ScopedPointer<juce::AudioProcessorValueTreeState::SliderAttachment> 
 										driveAtt, characterAtt, toneAtt, \
 										lowCutAtt, highCutAtt, mixAtt;

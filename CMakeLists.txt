@@ -59,6 +59,8 @@ add_subdirectory("${JUCE_PATH}" JUCE)
 juce_add_binary_data(SaturnationAssets
     SOURCES
         assets/background.png
+    assets/vuMeter.png
+    assets/vuMeterColor.png
         assets/knob_512x512.png
         assets/Outfit_Regular.ttf
 )
@@ -106,6 +108,7 @@ target_sources(Saturnation PRIVATE
     Source/PluginEditor.cpp
 	Source/apvts.cpp
 	Source/SaturnKnobLookAndFeel.cpp
+    Source/SaturnVuMeter.cpp
 )
 
 # 4. Libraries
