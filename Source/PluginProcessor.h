@@ -116,4 +116,10 @@ private:
 
 	//precalculated values for mix control
 	float 							mixLinear;
+
+	//=========================== Vu Meter Parameters ============================
+	std::array<float, 2> meterEnvelopes { 0.0f, 0.0f };							// Per-channel peak level envelopes for vu meter (0.0 to 1.0)
+	float outDrivenLevel = 0.0f;															// Peak level of the output signal after saturation, used for vu meter display
+    float alphaAttack  = 0.0f;
+    float alphaRelease = 0.0f;
 };

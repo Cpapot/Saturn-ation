@@ -27,8 +27,13 @@ private:
     juce::Colour peakColour       { juce::Colours::red };
     juce::Colour borderColour     { juce::Colours::white.withAlpha (0.20f) };
 
+	float minDb = -20.0f; // Minimum decibel level for display (corresponds to 0.001 linear gain)
+	float maxDb = 1.0f;   // Maximum decibel level for display (corresponds to 1.0 linear gain)
+
     float displayedLevel = 0.0f;
     float peakHoldLevel  = 0.0f;
+	float displayedLevelDb = 0.0f;
+    float peakHoldLevelDb  = 0.0f;
     juce::Image baseImage;    // contour (vuMeter.png)
     juce::Image colorImage;   // fill (vuMeterColor.png)
     bool hasBaseImage = false;

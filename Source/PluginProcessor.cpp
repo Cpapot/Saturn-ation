@@ -125,8 +125,12 @@ void SaturnationAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
 
     updateCutoffFilterCoefficients();
 
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+	//vu meter attack and release coefficients for peak level detection
+	const float attackTime  = 0.015f; // 15 ms
+    const float releaseTime = 0.250f; // 250 ms
+	alphaAttack  = std::exp (-1.0f / (sampleRate * attackTime));
+    alphaRelease = std::exp (-1.0f / (sampleRate * releaseTime));
+	meterEnvelopes.fill(0.0f);
 }
 
 void SaturnationAudioProcessor::updateCutoffFilterCoefficients()
@@ -331,6 +335,9 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 		return ;
     }
 
+	float maxBlockEnvelope = 0.0f;
+	float env = meterEnvelopes[(size_t)totalNumInputChannels - 1];
+
 	for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	{
 		auto* channelData = buffer.getWritePointer (channel);
@@ -342,22 +349,21 @@ void SaturnationAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 			const float tonedSample = applyToneControl (drySample, channel);
 			const float satSample   = applySaturation (tonedSample);
             blockOutputPeak = juce::jmax (blockOutputPeak, std::abs (satSample));
+
+			//	vu meter envelope calculation
+			const float rectified = std::abs(satSample);
+			if (rectified > env)
+				env = alphaAttack * (env - rectified) + rectified;
+			else
+				env = alphaRelease * (env - rectified) + rectified;
+			maxBlockEnvelope = juce::jmax (maxBlockEnvelope, env);
 			const float wetSample   = applyCutoff (satSample, channel);
 			channelData[sample]		= applyMix (drySample, wetSample);
 		}
 	}
 
-	float meterLevel = 0.0f;
-    if (blockInputPeak > 0.00001f && blockOutputPeak > 0.00001f)
-    {
-        const float gainRatio = blockOutputPeak / blockInputPeak;
-        const float gainReduction = gainRatio - 1.0f;
-        meterLevel = juce::jlimit (0.0f, 1.0f, gainReduction / 20.0f);
-    }
-    
-    const float previousLevel = driveMeterLevel.load (std::memory_order_relaxed);
-    const float decayedLevel = previousLevel * 0.88f;
-    driveMeterLevel.store (juce::jmax (meterLevel, decayedLevel), std::memory_order_relaxed);
+	meterEnvelopes[(size_t)totalNumInputChannels - 1] = env;
+	driveMeterLevel.store (maxBlockEnvelope);
     
     blockInputPeak = 0.0f;
     blockOutputPeak = 0.0f;

@@ -53,6 +53,7 @@ void SaturnVuMeter::setMeterBorderColour (juce::Colour newColour)
 void SaturnVuMeter::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
+	float proportion = juce::jmap (displayedLevelDb, minDb, maxDb, 0.0f, 1.0f);
 
     auto makeScaledImageRect = [&bounds] (const juce::Image& image)
     {
@@ -82,7 +83,7 @@ void SaturnVuMeter::paint (juce::Graphics& g)
         if (hasColorImage)
         {
             const auto colorRect = makeScaledImageRect (colorImage);
-            const auto filledHeight = colorRect.getHeight() * juce::jlimit (0.0f, 1.0f, displayedLevel);
+            const auto filledHeight = colorRect.getHeight() * juce::jlimit (0.0f, 1.0f, proportion);
             if (filledHeight > 1.0f)
             {
                 juce::Rectangle<float> fillArea = colorRect.withTrimmedTop (colorRect.getHeight() - filledHeight);
@@ -108,7 +109,7 @@ void SaturnVuMeter::paint (juce::Graphics& g)
         g.drawRoundedRectangle (bounds, 3.0f, 1.0f);
 
         // Compute fill area (bottom-up)
-        const auto fillHeight = bounds.getHeight() * juce::jlimit (0.0f, 1.0f, displayedLevel);
+        const auto fillHeight = bounds.getHeight() * juce::jlimit (0.0f, 1.0f, proportion);
         auto fillArea = bounds.removeFromBottom (fillHeight);
 
         if (! fillArea.isEmpty())
@@ -131,6 +132,9 @@ void SaturnVuMeter::timerCallback()
 
     displayedLevel = juce::jmax (target, displayedLevel * 0.86f);
     peakHoldLevel  = juce::jmax (target, peakHoldLevel * 0.94f);
+
+	displayedLevelDb = juce::Decibels::gainToDecibels (displayedLevel, -100.0f);
+    peakHoldLevelDb  = juce::Decibels::gainToDecibels (peakHoldLevel, -100.0f);
 
     repaint();
 }
